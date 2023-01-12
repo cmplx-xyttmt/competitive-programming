@@ -1,158 +1,6 @@
 from typing import List
 import sys
 
-from typing import Optional
-
-
-class Node:
-
-    def __init__(self, key, val):
-        self.key = key
-        self.val = val
-        self.left = None
-        self.right = None
-        self.size = 0
-
-
-class BST:
-
-    def __init__(self):
-        self._root = None
-
-    def _get(self, x: Optional[Node], key):
-        if x is None:
-            raise KeyError
-        if key < x.key:
-            return self._get(x.left, key)
-        elif x.key < key:
-            return self._get(x.right, key)
-        else:
-            return x.val
-
-    def __contains__(self, key):
-        try:
-            self.__getitem__(key)
-            return True
-        except KeyError:
-            return False
-
-    def __getitem__(self, key):
-        return self._get(self._root, key)
-
-    @staticmethod
-    def size(x: Optional[Node]):
-        if not x:
-            return 0
-        return x.size
-
-    def _set(self, x: Optional[Node], key, val):
-        if x is None:
-            return Node(key, val)
-        if key < x.key:
-            x.left = self._set(x.left, key, val)
-        elif x.key < key:
-            x.right = self._set(x.right, key, val)
-        else:
-            x.val = val
-        x.size = self.size(x.left) + self.size(x.right) + 1
-        return x
-
-    def __setitem__(self, key, value):
-        self._root = self._set(self._root, key, value)
-
-    def min(self):
-        return self._min(self._root).key
-
-    def _min(self, x: Optional[Node]):
-        if not x.left:
-            return x
-        return self._min(x.left)
-
-    def floor(self, key):
-        x = self._floor(self._root, key)
-        if not x:
-            return None
-        return x.key
-
-    def _floor(self, x: Optional[Node], key):
-        if not x:
-            return None
-        if x.key == key:
-            return x
-        if key < x.key:
-            return self._floor(x.left, key)
-        t = self._floor(x.right, key)
-        if t:
-            return t
-        return x
-
-    def select(self, k):
-        # Finds the node with the key ky such that there are k nodes with key < ky. i.e the (k - 1)th node.
-        # Returns the key of the node
-        return self._select(self._root, k).key
-
-    def _select(self, x: Optional[Node], k):
-        if not x:
-            return None
-        t = self.size(x.left)
-        if t > k:
-            return self._select(x.left, k)
-        elif t == k:
-            return x
-        else:
-            return self._select(x.right, k - t - 1)
-
-    def rank(self, k):
-        # returns number of keys less than k
-        return self._rank(self._root, k)
-
-    def _rank(self, x: Optional[Node], k):
-        # Returns number of keys less than k in the subtree rooted at x.
-        if not x:
-            return 0
-        if k < x.key:
-            return self._rank(x.left, k)
-        elif k == x.key:
-            return self.size(x.left)
-        else:
-            return 1 + self.size(x.left) + self._rank(k, x.right)
-
-    def delete_min(self):
-        self._root = self._delete_min(self._root)
-
-    def _delete_min(self, x: Optional[Node]):
-        if not x:
-            return None
-        if x.left:
-            x.left = self._delete_min(x.left)
-            x.size = 1 + self.size(x.left) + self.size(x.right)
-            return x
-        else:
-            return x.right
-
-    def delete(self, k):
-        # Delete node with key k
-        self._root = self._delete(self._root, k)
-
-    def _delete(self, x: Optional[Node], k) -> Optional[Node]:
-        if not x:
-            return None
-        if k < x.key:
-            x.left = self._delete(x.left, k)
-        elif k > x.key:
-            x.right = self._delete(x.right, k)
-        else:
-            if not x.left:
-                return x.right
-            if not x.right:
-                return x.left
-            t = x
-            x = self._min(t.right)
-            x.right = self._delete_min(t.right)
-            x.left = t.left
-        x.size = 1 + self.size(x.left) + self.size(x.right)
-        return x
-
 
 input_ = sys.stdin.readline
 print_ = sys.stdout.write
@@ -175,31 +23,124 @@ def read_ints():
     return list(map(int, read_line().split()))
 
 
+from bisect import bisect_left as lower_bound
+from bisect import bisect_right as upper_bound
+
+
+class FenwickTree:
+    def __init__(self, x):
+        bit = self.bit = list(x)
+        size = self.size = len(bit)
+        for i in range(size):
+            j = i | (i + 1)
+            if j < size:
+                bit[j] += bit[i]
+
+    def update(self, idx, x):
+        """updates bit[idx] += x"""
+        while idx < self.size:
+            self.bit[idx] += x
+            idx |= idx + 1
+
+    def __call__(self, end):
+        """calc sum(bit[:end])"""
+        x = 0
+        while end:
+            x += self.bit[end - 1]
+            end &= end - 1
+        return x
+
+    def find_kth(self, k):
+        """Find largest idx such that sum(bit[:idx]) <= k"""
+        idx = -1
+        for d in reversed(range(self.size.bit_length())):
+            right_idx = idx + (1 << d)
+            if right_idx < self.size and self.bit[right_idx] <= k:
+                idx = right_idx
+                k -= self.bit[idx]
+        return idx + 1, k
+
+
+class SortedList:
+    block_size = 700
+
+    def __init__(self, iterable=()):
+        self.macro = []
+        self.micros = [[]]
+        self.micro_size = [0]
+        self.fenwick = FenwickTree([0])
+        self.size = 0
+        for item in iterable:
+            self.insert(item)
+
+    def insert(self, x):
+        i = lower_bound(self.macro, x)
+        j = upper_bound(self.micros[i], x)
+        self.micros[i].insert(j, x)
+        self.size += 1
+        self.micro_size[i] += 1
+        self.fenwick.update(i, 1)
+        if len(self.micros[i]) >= self.block_size:
+            self.micros[i:i + 1] = self.micros[i][:self.block_size >> 1], self.micros[i][self.block_size >> 1:]
+            self.micro_size[i:i + 1] = self.block_size >> 1, self.block_size >> 1
+            self.fenwick = FenwickTree(self.micro_size)
+            self.macro.insert(i, self.micros[i + 1][0])
+
+    def pop(self, k=-1):
+        i, j = self._find_kth(k)
+        self.size -= 1
+        self.micro_size[i] -= 1
+        self.fenwick.update(i, -1)
+        return self.micros[i].pop(j)
+
+    def __getitem__(self, k):
+        i, j = self._find_kth(k)
+        return self.micros[i][j]
+
+    def count(self, x):
+        return self.upper_bound(x) - self.lower_bound(x)
+
+    def __contains__(self, x):
+        return self.count(x) > 0
+
+    def lower_bound(self, x):
+        i = lower_bound(self.macro, x)
+        return self.fenwick(i) + lower_bound(self.micros[i], x)
+
+    def upper_bound(self, x):
+        i = upper_bound(self.macro, x)
+        return self.fenwick(i) + upper_bound(self.micros[i], x)
+
+    def _find_kth(self, k):
+        return self.fenwick.find_kth(k + self.size if k < 0 else k)
+
+    def __len__(self):
+        return self.size
+
+    def __iter__(self):
+        return (x for micro in self.micros for x in micro)
+
+    def __repr__(self):
+        return str(list(self))
+
+
 def solve():
-    n, m = read_ints()
-    prices = read_ints()
-    prices_bst = BST()
-    for price in prices:
-        if price not in prices_bst:
-            prices_bst[price] = 0
-        prices_bst[price] += 1
+    read_ints()
+    prices_list = SortedList(read_ints())
 
     max_prices = read_ints()
     ans = []
     for price in max_prices:
-        closest = prices_bst.floor(price)
-        if not closest:
+        closest_idx = prices_list.upper_bound(price) - 1
+        if closest_idx == -1:
             ans.append(-1)
         else:
+            closest = prices_list[closest_idx]
             ans.append(closest)
-            prices_bst[closest] -= 1
-            if prices_bst[closest] == 0:
-                prices_bst.delete(closest)
+            prices_list.pop(closest_idx)
 
     ans = '\n'.join(map(str, ans))
-    print(ans)
-
-    # Doesn't pass the time limit
+    print_(ans)
 
 
 if __name__ == '__main__':
