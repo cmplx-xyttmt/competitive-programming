@@ -22,25 +22,35 @@ def read_ints():
     return list(map(int, read_line().split()))
 
 
-def get_parent(a, parent):
-    parents_on_path = []
-    while a != parent[a]:
-        parents_on_path.append(a)
-        a = parent[a]
-    p = a
-    for a in parents_on_path:
-        parent[a] = p
-    return p
+class DSU:
 
+    def __init__(self, size: int):
+        self.parents = [i for i in range(size + 1)]
+        self.size = [1 for _ in range(size + 1)]
 
-def union(a, b, parent, size):
-    a, b = get_parent(a, parent), get_parent(b, parent)
+    def get_parent(self, node: int):
+        path = []
+        while node != self.parents[node]:
+            path.append(node)
+            node = self.parents[node]
 
-    if size[a] > size[b]:
-        a, b = b, a
+        parent = node
+        for node in path:
+            self.parents[node] = parent
+        return parent
 
-    parent[a] = b
-    size[b] += size[a]
+    def union(self, first: int, second: int):
+        first, second = self.get_parent(first), self.get_parent(second)
+        if first == second:
+            return
+        if self.size[first] > self.size[second]:
+            first, second = second, first
+
+        self.parents[first] = second
+        self.size[second] += self.size[first]
+
+    def get_size(self, node: int):
+        return self.size[self.get_parent(node)]
 
 
 def solve():
@@ -54,14 +64,13 @@ def solve():
         u, v = map(int, [u, v])
         queries.append((query, u, v))
 
-    size = [1 for _ in range(n + 1)]
-    parent = [i for i in range(n + 1)]
+    dsu = DSU(n)
     ans = []
     for query, u, v in queries[::-1]:
         if query == 'ask':
-            ans.append('YES' if get_parent(u, parent) == get_parent(v, parent) else "NO")
+            ans.append('YES' if dsu.get_parent(u) == dsu.get_parent(v) else "NO")
         else:
-            union(u, v, parent, size)
+            dsu.union(u, v)
 
     ans_string = '\n'.join(ans[::-1])
     print_(f"{ans_string}\n")
