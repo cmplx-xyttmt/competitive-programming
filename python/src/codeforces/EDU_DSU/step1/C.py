@@ -22,50 +22,64 @@ def read_ints():
     return list(map(int, read_line().split()))
 
 
-def get_parent(a, parent, points):
-    score = points[a]
-    while a != parent[a]:
-        a = parent[a]
-        score += points[a]
-    return a, score
+class DSU:
 
+    def __init__(self, size: int):
+        self.parents = [i for i in range(size + 1)]
+        self.size = [1 for _ in range(size + 1)]
+        self.points = [0 for _ in range(size + 1)]
 
-def add(a, score, parent, points):
-    a = get_parent(a, parent, points)[0]
-    points[a] += score
+    def get_parent(self, node: int):
+        path = []
+        while node != self.parents[node]:
+            path.append(node)
+            node = self.parents[node]
 
+        parent = node
+        # no path compression for this problem
+        return parent
 
-def union(a, b, parent, points, size):
-    a, b = get_parent(a, parent, points)[0], get_parent(b, parent, points)[0]
-    if a == b:
-        return
+    def union(self, first: int, second: int):
+        first, second = self.get_parent(first), self.get_parent(second)
+        if first == second:
+            return
+        if self.size[first] > self.size[second]:
+            first, second = second, first
 
-    if size[a] > size[b]:
-        a, b = b, a
+        self.parents[first] = second
+        self.size[second] += self.size[first]
+        self.points[first] -= self.points[second]
 
-    size[b] += size[a]
-    points[a] -= points[b]
-    parent[a] = b
+    def get_size(self, node: int):
+        return self.size[self.get_parent(node)]
+
+    def get_points(self, node: int):
+        points = self.points[node]
+        while node != self.parents[node]:
+            node = self.parents[node]
+            points += self.points[node]
+        return points
+
+    def add_points(self, node: int, points: int):
+        parent = self.get_parent(node)
+        self.points[parent] += points
 
 
 def solve():
     n, m = read_ints()
-    points = [0 for _ in range(n + 1)]
-    size = [1 for _ in range(n + 1)]
-    parent = [i for i in range(n + 1)]
+    dsu = DSU(n)
     for _ in range(m):
         line = read_strings()
         op = line[0]
         if op == 'add':
             a, score = map(int, line[1:])
-            add(a, score, parent, points)
+            dsu.add_points(a, score)
         elif op == 'join':
             a, b = map(int, line[1:])
-            union(a, b, parent, points, size)
+            dsu.union(a, b)
         else:
             a = int(line[1])
-            _, score = get_parent(a, parent, points)
-            print_(f"{score}\n")
+            print_(f"{dsu.get_points(a)}\n")
 
 
 if __name__ == '__main__':
