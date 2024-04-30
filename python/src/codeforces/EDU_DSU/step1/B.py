@@ -23,49 +23,60 @@ def read_ints():
     return list(map(int, read_line().split()))
 
 
-def get_parent(a, parents):
-    path = []
-    while a != parents[a]:
-        path.append(a)
-        a = parents[a]
+class DSU:
 
-    p = a
-    for a in path:
-        parents[a] = p
+    def __init__(self, size: int):
+        self.parents = [i for i in range(size + 1)]
+        self.size = [1 for _ in range(size + 1)]
+        self.minimum = [i for i in range(size + 1)]
+        self.maximum = [i for i in range(size + 1)]
 
-    return p
+    def get_parent(self, node: int):
+        path = []
+        while node != self.parents[node]:
+            path.append(node)
+            node = self.parents[node]
 
+        parent = node
+        for node in path:
+            self.parents[node] = parent
+        return parent
 
-def union(a, b, parents, minimum, maximum, size):
-    a, b = get_parent(a, parents), get_parent(b, parents)
-    if a == b:
-        return
+    def union(self, first: int, second: int):
+        first, second = self.get_parent(first), self.get_parent(second)
+        if first == second:
+            return
+        if self.size[first] > self.size[second]:
+            first, second = second, first
 
-    if size[a] > size[b]:
-        a, b = b, a
+        self.parents[first] = second
+        self.size[second] += self.size[first]
+        self.minimum[second] = min(self.minimum[first], self.minimum[second])
+        self.maximum[second] = max(self.maximum[first], self.maximum[second])
 
-    parents[a] = b
-    size[b] += size[a]
-    minimum[b] = min(minimum[a], minimum[b])
-    maximum[b] = max(maximum[a], maximum[b])
+    def get_size(self, node: int):
+        return self.size[self.get_parent(node)]
+
+    def get_minimum(self, node: int):
+        return self.minimum[self.get_parent(node)]
+
+    def get_maximum(self, node: int):
+        return self.maximum[self.get_parent(node)]
 
 
 def solve():
     n, m = read_ints()
-    size = [1 for _ in range(n + 1)]
-    minimum = [i for i in range(n + 1)]
-    maximum = [i for i in range(n + 1)]
-    parents = [i for i in range(n + 1)]
+    dsu = DSU(n)
     for _ in range(m):
         line = read_strings()
         op = line[0]
         if op == 'union':
             a, b = map(int, line[1:])
-            union(a, b, parents, minimum, maximum, size)
+            dsu.union(a, b)
         else:
             a = int(line[1])
-            p = get_parent(a, parents)
-            print_(f"{minimum[p]} {maximum[p]} {size[p]}\n")
+            minimum, maximum, size = dsu.get_minimum(a), dsu.get_maximum(a), dsu.get_size(a)
+            print_(f"{minimum} {maximum} {size}\n")
 
 
 if __name__ == '__main__':
