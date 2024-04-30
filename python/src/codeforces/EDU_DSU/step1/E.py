@@ -1,3 +1,4 @@
+import copy
 from typing import List
 import sys
 
@@ -22,80 +23,84 @@ def read_ints():
     return list(map(int, read_line().split()))
 
 
-def get_parent(a, parent):
-    path = []
-    while a != parent[a]:
-        path.append(a)
-        a = parent[a]
+class DSU:
 
-    for p in path:
-        parent[p] = a
+    def __init__(self, size: int):
+        self.parents = [i for i in range(size + 1)]
+        self.size = [1 for _ in range(size + 1)]
+        self.time_to_join = [-1 for _ in range(size + 1)]
+        self.time_to_join[1] = 0
 
-    return a
+    def get_parent(self, node: int):
+        path = []
+        while node != self.parents[node]:
+            path.append(node)
+            node = self.parents[node]
 
+        parent = node
+        return parent
 
-def union(a, b, parent, size, children, fall_time, time, initial):
-    a, b = get_parent(a, parent), get_parent(b, parent)
-    if a == b:
-        return
+    def get_time(self, node: int):
+        while node != self.parents[node]:
+            prev_node = node
+            node = self.parents[node]
+            if node == 1:
+                return self.time_to_join[prev_node]
+        return -1
 
-    if a == 1 or size[a] > size[b]:
-        a, b = b, a
-    if b == 1:
-        if not initial:
-            seen = set()
-            stack = [a]
-            # print(f'{a} children -> ', children[a])
-            # print('3 children ->', children[3])
-            while stack:
-                p = stack.pop()
-                # print(f'{a} -> ', p)
-                seen.add(p)
-                fall_time[p] = time
-                for c in children[p]:
-                    if c not in seen:
-                        stack.append(c)
-    else:
-        children[b].append(a)
-    size[b] += size[a]
-    parent[a] = b
+    def union(self, first: int, second: int, time: int):
+        first, second = self.get_parent(first), self.get_parent(second)
+        if first == second:
+            return
+        if first == 1 or (self.size[first] > self.size[second] and second != 1):
+            first, second = second, first
+
+        self.parents[first] = second
+        self.size[second] += self.size[first]
+        if second == 1:
+            self.time_to_join[first] = time
+
+    def get_size(self, node: int):
+        return self.size[self.get_parent(node)]
 
 
 def solve():
+    # go in reverse order
+    #   - in order to do this, we need to determine config at the end
+    #   - after that, calculate the time t at which each monkey joins the leaders' connected component.
+    #          - go in reverse order of drops
+    #          - avoid path compression, so answer can be time of node just before they join parent.
+    #                - or do path compression only if the parent is the leader
+    #   - final answer is m - t
     n, m = read_ints()
-    left = [-1 for _ in range(n + 1)]
-    right = [-1 for _ in range(n + 1)]
-    for i in range(1, n + 1):
-        l, r = read_ints()
-        left[i], right[i] = l, r
+    hands = [[0, 0]] + [read_ints() for _ in range(n)]
+    hands_at_end = copy.deepcopy(hands)
+    drops = [read_ints() for _ in range(m)]
+    for monkey, hand in drops:
+        hands_at_end[monkey][hand - 1] = -1
+    dsu = DSU(n)
+    for i, (left, right) in enumerate(hands_at_end):
+        if left >= 1:
+            dsu.union(i, left, -1)
+        if right >= 1:
+            dsu.union(i, right, -1)
 
-    releases = []
-    releases_set = set()
-    for _ in range(m):
-        monkey, hand = read_ints()
-        other_monkey = left[monkey] if hand == 1 else right[monkey]
-        releases.append((monkey, other_monkey, hand))
-        releases_set.add((monkey, other_monkey, hand))
+    total_time = 0
+    drops.reverse()
+    for monkey, hand in drops:
+        next_monkey = hands[monkey][hand - 1]
+        if next_monkey != -1:
+            dsu.union(monkey, next_monkey, total_time)
+        total_time += 1
 
-    parent = [i for i in range(n + 1)]
-    size = [0 for _ in range(n + 1)]
-    children = [[i] for i in range(n + 1)]
-    for i in range(1, n + 1):
-        if left[i] != -1:
-            u, v = i, left[i]
-            if (u, v, 1) not in releases_set:
-                union(u, v, parent, size, children, [], -1, True)
-        if right[i] != -1:
-            u, v = i, right[i]
-            if (u, v, 2) not in releases_set:
-                union(u, v, parent, size, children, [], -1, True)
-
-    fall_time = [-1 for _ in range(n + 1)]
-    for i, (u, v, _) in enumerate(releases[::-1]):
-        union(u, v, parent, size, children, fall_time, m - i - 1, False)
-
-    ans = [str(fall_time[i]) for i in range(1, n + 1)]
-    ans = '\n'.join(ans)
+    times = [dsu.get_time(monkey) for monkey in range(n + 1)]
+    time_for_fall = []
+    for time in times:
+        if time >= 0:
+            time_for_fall.append(total_time - time - 1)
+        else:
+            time_for_fall.append(time)
+    ans = "\n".join(map(str, time_for_fall[1:]))
     print_(f"{ans}\n")
 
 
