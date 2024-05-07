@@ -22,33 +22,51 @@ def read_ints():
     return list(map(int, read_line().split()))
 
 
-def get_parent(num, parent):
-    path = []
-    while num is not None and num != parent[num]:
-        path.append(num)
-        num = parent[num]
+class DSU:
 
-    if not num:
-        return -1
+    def __init__(self, size: int):
+        self.parents = [i for i in range(size + 1)]
+        self.size = [1 for _ in range(size + 1)]
 
-    for a in path:
-        parent[a] = num
+    def get_parent(self, node: int):
+        path = []
+        while node != self.parents[node]:
+            path.append(node)
+            node = self.parents[node]
 
-    return num
+        parent = node
+        for node in path:
+            self.parents[node] = parent
+        return parent
+
+    def union(self, first: int, second: int):
+        first, second = self.get_parent(first), self.get_parent(second)
+        if first == second:
+            return
+        if first > second:
+            first, second = second, first
+
+        self.parents[first] = second
+        self.size[second] += self.size[first]
+
+    def get_size(self, node: int):
+        return self.size[self.get_parent(node)]
 
 
 def solve():
     n, m = read_ints()
-
-    parent = [i for i in range(n + 1)]
-
+    dsu = DSU(n + 1)
     for _ in range(m):
-        op, num = read_strings()
+        query, num = read_strings()
         num = int(num)
-        if op == '-':
-            parent[num] = None if num == n else num + 1
+        if query == "?":
+            nxt = dsu.get_parent(num)
+            nxt = -1 if nxt > n else nxt
+            print_(f"{nxt}\n")
         else:
-            print_(f"{get_parent(num, parent)}\n")
+            if num > 1 and dsu.get_parent(num - 1) != num - 1:
+                dsu.union(num - 1, num + 1)
+            dsu.union(num, num + 1)
 
 
 if __name__ == '__main__':
