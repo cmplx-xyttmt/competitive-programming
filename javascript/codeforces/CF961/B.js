@@ -1,3 +1,4 @@
+'use strict';
 process.stdin.resume();
 process.stdin.setEncoding('utf-8');
 
@@ -40,7 +41,9 @@ function petals(costLimit, a, aNum, a1Num) {
 }
 
 function solve() {
-    let [n, m] = readLine().split(' ').map(Number);
+    let line1 = readLine().split(' ').map(Number);
+    let n = line1[0];
+    let m = line1[1];
     let array = readLine().split(' ').map(Number);
     const numCount = {}
     array.forEach(num => {
