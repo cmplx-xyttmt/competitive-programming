@@ -23,54 +23,44 @@ def read_ints():
 
 
 def solve():
-    # for each cell, we want to find out how many k x k grids it belongs to.
-    #   xxxxx
-    #   xxxxx
-    #   xxxxx
-    #   xxxxx
-    #   a, b
-    #   min(a, k), min(b, k)
-    # start with a = k..n, b = k..m  (n - k + 1) * (m - k + 1)
-    # then a = k - 1, b = k..m  (m - k + 1)
-    # then a = k..n, b = k - 1  (n - k + 1)
-    # a = k, b = k - 1
-    # a = k - 1, b = k - 1
-    # k, k - 1
-    # k - 1, k
-    # k, k - 2
-    # k - 2, k
-    # k - 1, k - 1
-
     t = read_int()
     for _ in range(t):
         n, m, k = read_ints()
         w = read_int()
         a = read_ints()
         a.sort(reverse=True)
-        i = 0
-        spectacle = 0
-        for x in range(k - 1, n):
-            if i < w:
-                for y in range(k - 1, m):
-                    print(x, y)
-                    if i < w:
-                        spectacle += a[i] * k * k
-                        i += 1
+        grid = [[0 for _ in range(m)] for _ in range(n)]
+        for i in range(n):
+            for j in range(m):
+                if i + k <= n and j + k <= m:
+                    grid[i][j] += 1
+                    if i + k < n and j + k < m:
+                        grid[i + k][j] -= 1
+                        grid[i][j + k] -= 1
+                        grid[i + k][j + k] += 1
                     else:
-                        break
+                        if i + k < n:
+                            grid[i + k][j] -= 1
+                        if j + k < m:
+                            grid[i][j + k] -= 1
 
-        diff = 1
-        while i < w:
-            for diffx in range(diff + 1):
-                diffy = diff - diffx
-                print(k - diffx - 1, k - diffy - 1)
-                if i < w:
-                    spectacle += a[i] * (k - diffx) * (k - diffy)
-                    i += 1
+        values = []
+        for i in range(n):
+            for j in range(m):
+                if i - 1 >= 0 and j - 1 >= 0:
+                    grid[i][j] += grid[i - 1][j] + grid[i][j - 1] - grid[i - 1][j - 1]
                 else:
-                    break
-            diff += 1
-        print_(f"{spectacle}\n")
+                    if i - 1 >= 0:
+                        grid[i][j] += grid[i - 1][j]
+                    if j - 1 >= 0:
+                        grid[i][j] += grid[i][j - 1]
+                values.append(grid[i][j])
+
+        values.sort(reverse=True)
+        ans = 0
+        for i, val in enumerate(a):
+            ans += val * values[i]
+        print_(f"{ans}\n")
 
 
 if __name__ == '__main__':
