@@ -42,13 +42,25 @@ def is_safe(nums):
     return True
 
 
+def is_safe_rem(nums):
+    if is_safe(nums):
+        return True
+    for i in range(len(nums)):
+        if is_safe(nums[0:i] + nums[i + 1:]):
+            return True
+    return False
+
+
 def solve():
     nums = read_ints()
     safe = 0
+    safe_rem = 0
     while nums:
         safe += is_safe(nums)
+        safe_rem += is_safe_rem(nums)
         nums = read_ints()
-    print(f"Day 1: {safe}")
+    print(f"Part 1: {safe}")
+    print(f"Part 2: {safe_rem}")
 
 
 if __name__ == '__main__':
