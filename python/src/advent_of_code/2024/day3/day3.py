@@ -1,3 +1,4 @@
+import bisect
 from typing import List
 import sys
 
@@ -22,9 +23,22 @@ def read_ints():
     return list(map(int, read_line().split()))
 
 
-def find_muls(data):
+def find_muls(data: str):
     start = 0
     total = 0
+    dos = []
+    donts = []
+    idx = 0
+    while 0 < idx < len(data):
+        idx = data.find("do()")
+        dos.append(idx)
+        idx = idx + 1
+    idx = 0
+    while 0 < idx < len(data):
+        idx = data.find("don't()")
+        donts.append(idx)
+        idx = idx + 1
+
     while True:
         start = data[start:].find("mul(") + start + 3
         if 0 <= start < len(data):
@@ -37,6 +51,7 @@ def find_muls(data):
                     continue
                 print("nums: ", nums[0], nums[1])
                 total += int(nums[0]) * int(nums[1])
+                bisect.bisect_left(dos, start)
                 start = end
             else:
                 break
