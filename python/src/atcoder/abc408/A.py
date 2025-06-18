@@ -25,7 +25,7 @@ def read_ints():
 def solve():
     n, s = read_ints()
     times = read_ints()
-    time_to_sleep = times[0]
+    time_to_sleep = s
     slept = False
     for t in times:
         # print(t, time_to_sleep)
