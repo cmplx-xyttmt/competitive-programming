@@ -23,31 +23,28 @@ def read_ints():
 
 
 def solve():
-    longer = read_line()
-    shorter = read_line()
-    # while longer[0..i] == shorter[0..i] check if longer[i + 1..n] == shorter[i..n]
-    suffix_equal = [False] * len(longer)
-    prev_true = True
-    last = len(longer) - 1
-    while last > 0:
-        if prev_true and longer[last] == shorter[last - 1]:
-            suffix_equal[last] = True
-            prev_true = True
-        else:
-            break
-        last -= 1
+    s1 = read_line()
+    s2 = read_line()
 
-    first = 0
-    positions = []
-    if suffix_equal[1]:
-        positions.append(1)
+    n = len(s1)
+    m = len(s2)
 
-    while first < len(shorter) and longer[first] == shorter[first]:
-        if (first + 2 < len(longer) and suffix_equal[first + 2]) or first == len(shorter) - 1:
-            positions.append(first + 2)
-        first += 1
-    print(f"{len(positions)}")
-    print(" ".join(map(str, positions)))
+    prefix_len = 0
+    while prefix_len < m and s1[prefix_len] == s2[prefix_len]:
+        prefix_len += 1
+
+    suffix_len = 0
+    while suffix_len < m and s1[n - 1 - suffix_len] == s2[m - 1 - suffix_len]:
+        suffix_len += 1
+
+    results = []
+
+    for i in range(1, n + 1):
+        if (prefix_len >= i - 1) and (suffix_len >= n - i):
+            results.append(i)
+
+    print(len(results))
+    print(*results)
 
 
 if __name__ == '__main__':
