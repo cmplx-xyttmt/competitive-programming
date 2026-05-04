@@ -25,15 +25,13 @@ def read_ints():
 
 def solve():
     n = read_int()
-    dp = [[0] * 3 for _ in range(n)]  # dp[i][j] -> maximum happiness on day i if he does activity j
-    for i in range(n):
+    prev = read_ints()
+    for i in range(1, n):
         happiness = read_ints()
-        for j in range(3):
-            dp[i][j] = happiness[j]
-            if i > 0:
-                dp[i][j] += max(dp[i - 1][(j + 1) % 3],
-                                dp[i - 1][(j + 2) % 3])
-    print(max(dp[-1]))
+        curr = [happiness[j] + max(prev[k] for k in range(3) if k != j)
+                for j in range(3)]
+        prev = curr
+    print(max(prev))
 
 
 if __name__ == '__main__':
