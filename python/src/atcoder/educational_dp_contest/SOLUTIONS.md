@@ -117,3 +117,33 @@ answer = max(dp)
 - **Kahn's algorithm**: process a DAG in topological order using a queue of zero-indegree nodes; decrement indegree as edges are consumed.
 - Use `None` (not `0`) as the sentinel for uncomputed memoization values when `0` is a valid result.
 - Kahn's approach eliminates recursion limits and the sentinel problem simultaneously.
+
+---
+
+## H — Grid 1
+**Approach:** 2D DP. `dp[i][j]` = number of paths from (1,1) to (i,j) moving only right or down.
+Transition: if cell is '.', `dp[i][j] = dp[i-1][j] + dp[i][j-1]` (mod 10^9+7)
+
+**Critique highlights:**
+- `int(1e9) + 7` uses float arithmetic — use `10**9 + 7` for exact integer arithmetic.
+- Full H×W table unnecessary — a single 1D array updated in-place suffices. When processing left-to-right, `dp[j]` holds the "from above" value and `dp[j-1]` holds the already-updated "from left" value. Zero out `dp[j]` on '#' cells to prevent propagation.
+
+**Learnt:**
+- In-place 1D rolling update works for grid path DP: `dp[j] += dp[j-1]` with zeroing on blocked cells.
+- `dp[0][1] = 1` seeding trick: placing the seed in a virtual cell just above (1,1) avoids a separate base-case check — the transition naturally gives `dp[1][1] = 1` for an open start and `0` for a blocked one.
+
+---
+
+## I — Coins
+**Approach:** Rolling array DP. `dp[j]` = probability of getting exactly `j` heads after processing all coins.
+Transition: `dp[j] = dp[j] * (1 - p_i) + dp[j-1] * p_i` (not heads + heads)
+Answer: `sum(dp[n//2 + 1:])`
+
+**Critique highlights:**
+- `curr = list(prev)` then overwriting `curr[0]` wastes one copy — initialise fresh with `[0.0] * (n+1)` instead.
+- In-place right-to-left update avoids allocating a new array each iteration — same principle as 0/1 knapsack. Iterating `j` from `i+1` down to `1` ensures `dp[j-1]` still holds the previous row's value when `dp[j]` is computed.
+- `read_strings()` then manual float conversion → `list(map(float, read_line().split()))`.
+- Remove leftover debug comment.
+
+**Learnt:**
+- The right-to-left in-place update pattern applies beyond knapsack — any DP where the transition reads `dp[j-1]` from the previous state can use this trick.
